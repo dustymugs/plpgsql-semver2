@@ -31,7 +31,8 @@ EXCEPTION
 		RETURN NULL::int;
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION to_semver(version text)
 RETURNS semver
@@ -113,8 +114,6 @@ BEGIN
 		text2 := semver2.identifiers[i];
 		num1 := to_int(text1);
 		num2 := to_int(text2);
-		RAISE NOTICE '% %', text1, text2;
-		RAISE NOTICE '% %', num1, num2;
 
 		IF num1 IS NOT NULL AND num2 IS NOT NULL THEN
 			IF num1 = num2 THEN
