@@ -13,7 +13,11 @@ for sql in $(find ./tests -name test.*.sql); do
 	if [ -z "$diffs" ]; then
 		echo "OK"
 	else
+		echo "FAIL"
+		OLD_IFS="$IFS"
+		IFS="\n"
 		echo $diffs
+		IFS="${OLD_IFS}"
 	fi
 done
 
