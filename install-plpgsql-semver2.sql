@@ -383,3 +383,11 @@ CREATE OPERATOR CLASS hash_semver_ops
 	DEFAULT FOR TYPE semver USING hash AS
 		OPERATOR    1    = ,
 		FUNCTION    1    hash_semver(semver);
+
+CREATE CAST (text as semver)
+	WITH FUNCTION text_to_semver(text)
+	AS IMPLICIT;
+
+CREATE CAST (semver as text)
+	WITH FUNCTION semver_to_text(semver)
+	AS ASSIGNMENT;

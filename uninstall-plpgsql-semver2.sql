@@ -1,3 +1,5 @@
+DROP CAST IF EXISTS (text as semver);
+DROP CAST IF EXISTS (semver as text);
 DROP OPERATOR CLASS IF EXISTS hash_semver_ops USING hash;
 DROP OPERATOR CLASS IF EXISTS btree_semver_ops USING btree;
 
