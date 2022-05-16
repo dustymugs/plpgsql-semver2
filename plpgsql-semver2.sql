@@ -87,6 +87,30 @@ $$
 LANGUAGE plpgsql
 IMMUTABLE STRICT PARALLEL SAFE;
 
+CREATE OR REPLACE FUNCTION semver_to_text(semver1 semver)
+RETURNS text
+AS $$
+DECLARE
+	version text;
+BEGIN
+	version := FORMAT('%s.%s.%s', semver1.major, semver1.minor, semver1.patch);
+	IF version IS NULL THEN
+		RETURN NULL;
+	END IF;
+
+	IF semver1.prerelease IS NOT NULL THEN
+		version := FORMAT('%s-%s', version, semver1.prerelease);
+	END IF;
+	IF semver1.build IS NOT NULL THEN
+		version := FORMAT('%s+%s', version, semver1.build);
+	END IF;
+
+	RETURN version;
+END;
+$$
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
 CREATE OR REPLACE FUNCTION semver_eq(semver1 semver, semver2 semver)
 RETURNS boolean
 AS $$
@@ -153,10 +177,16 @@ DECLARE
 BEGIN
 	IF semver1.major < semver2.major THEN
 		RETURN TRUE;
+	ELSIF semver1.major > semver2.major THEN
+		RETURN FALSE;
 	ELSIF semver1.minor < semver2.minor THEN
 		RETURN TRUE;
+	ELSIF semver1.minor > semver2.minor THEN
+		RETURN FALSE;
 	ELSIF semver1.patch < semver2.patch THEN
 		RETURN TRUE;
+	ELSIF semver1.patch > semver2.patch THEN
+		RETURN FALSE;
 	ELSIF semver1.prerelease IS NULL AND semver2.prerelease IS NULL THEN
 		RETURN FALSE;
 	ELSIF semver1.prerelease IS NOT NULL AND semver2.prerelease IS NULL THEN
@@ -249,10 +279,16 @@ DECLARE
 BEGIN
 	IF semver1.major > semver2.major THEN
 		RETURN TRUE;
+	ELSIF semver1.major < semver2.major THEN
+		RETURN FALSE;
 	ELSIF semver1.minor > semver2.minor THEN
 		RETURN TRUE;
+	ELSIF semver1.minor < semver2.minor THEN
+		RETURN FALSE;
 	ELSIF semver1.patch > semver2.patch THEN
 		RETURN TRUE;
+	ELSIF semver1.patch < semver2.patch THEN
+		RETURN FALSE;
 	ELSIF semver1.prerelease IS NULL AND semver2.prerelease IS NULL THEN
 		RETURN FALSE;
 	ELSIF semver1.prerelease IS NOT NULL AND semver2.prerelease IS NULL THEN
@@ -357,30 +393,6 @@ AS
 	OPERATOR    4    >= ,
 	OPERATOR    5    >  ,
 	FUNCTION    1    semver_cmp(semver, semver);
-
-CREATE OR REPLACE FUNCTION semver_to_text(semver1 semver)
-RETURNS text
-AS $$
-DECLARE
-	version text;
-BEGIN
-	version := FORMAT('%s.%s.%s', semver1.major, semver1.minor, semver1.patch);
-	IF version IS NULL THEN
-		RETURN NULL;
-	END IF;
-
-	IF semver1.prerelease IS NOT NULL THEN
-		version := FORMAT('%s-%s', version, semver1.prerelease);
-	END IF;
-	IF semver1.build IS NOT NULL THEN
-		version := FORMAT('%s+%s', version, semver1.build);
-	END IF;
-
-	RETURN version;
-END;
-$$
-LANGUAGE plpgsql
-IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION hash_semver(semver1 semver)
 RETURNS int

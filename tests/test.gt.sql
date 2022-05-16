@@ -10,3 +10,14 @@ SELECT text_to_semver('1.0.0-beta.11') > text_to_semver('1.0.0-beta.2'); -- TRUE
 SELECT text_to_semver('1.0.0-rc.1') > text_to_semver('1.0.0-beta.11'); -- TRUE
 SELECT text_to_semver('1.0.0') > text_to_semver('1.0.0-rc.1'); -- TRUE
 SELECT text_to_semver('1.0.1') > text_to_semver('1.0.0'); -- TRUE
+SELECT text_to_semver('1.0.0') > text_to_semver('0.0.0'); -- TRUE
+SELECT text_to_semver('1.0.0') > text_to_semver('0.0.1'); -- TRUE
+SELECT text_to_semver('1.0.0') > text_to_semver('0.1.1'); -- TRUE
+SELECT text_to_semver('1.0.0') > text_to_semver('1.1.1'); -- FALSE
+SELECT text_to_semver('1.1.0') > text_to_semver('1.1.1'); -- FALSE
+SELECT text_to_semver('1.1.1') > text_to_semver('1.1.1'); -- FALSE
+SELECT text_to_semver('1.1.2') > text_to_semver('1.1.1'); -- TRUE
+SELECT text_to_semver('0.0.0') > text_to_semver('0.0.0'); -- FALSE
+SELECT text_to_semver('0.0.0') > text_to_semver('0.0.1'); -- FALSE
+SELECT text_to_semver('0.0.0') > text_to_semver('0.1.0'); -- FALSE
+SELECT text_to_semver('0.0.0') > text_to_semver('1.0.0'); -- FALSE
