@@ -15,7 +15,7 @@ DROP FUNCTION IF EXISTS semver_le(semver, semver);
 DROP FUNCTION IF EXISTS semver_gt(semver, semver);
 DROP FUNCTION IF EXISTS semver_ge(semver, semver);
 DROP FUNCTION IF EXISTS semver_cmp(semver, semver);
-DROP FUNCTION IF EXISTS to_semver(text);
+DROP FUNCTION IF EXISTS text_to_semver(text);
 DROP FUNCTION IF EXISTS semver_to_text(semver);
 DROP FUNCTION IF EXISTS hash_semver(semver);
 
@@ -45,7 +45,7 @@ $$
 LANGUAGE plpgsql
 IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE OR REPLACE FUNCTION to_semver(version text)
+CREATE OR REPLACE FUNCTION text_to_semver(version text)
 RETURNS semver
 AS $$
 DECLARE
