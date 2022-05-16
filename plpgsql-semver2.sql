@@ -1,16 +1,27 @@
+DROP OPERATOR CLASS IF EXISTS hash_semver_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS btree_semver_ops USING btree;
+
+DROP OPERATOR IF EXISTS = (semver, semver);
+DROP OPERATOR IF EXISTS <> (semver, semver);
 DROP OPERATOR IF EXISTS < (semver, semver);
 DROP OPERATOR IF EXISTS <= (semver, semver);
 DROP OPERATOR IF EXISTS > (semver, semver);
 DROP OPERATOR IF EXISTS >= (semver, semver);
 
-DROP FUNCTION IF EXISTS to_int(text);
-
+DROP FUNCTION IF EXISTS semver_eq(semver, semver);
+DROP FUNCTION IF EXISTS semver_ne(semver, semver);
 DROP FUNCTION IF EXISTS semver_lt(semver, semver);
 DROP FUNCTION IF EXISTS semver_le(semver, semver);
 DROP FUNCTION IF EXISTS semver_gt(semver, semver);
 DROP FUNCTION IF EXISTS semver_ge(semver, semver);
+DROP FUNCTION IF EXISTS semver_cmp(semver, semver);
 DROP FUNCTION IF EXISTS to_semver(text);
+DROP FUNCTION IF EXISTS semver_to_text(semver);
+DROP FUNCTION IF EXISTS hash_semver(semver);
+
 DROP TYPE IF EXISTS semver;
+
+DROP FUNCTION IF EXISTS to_int(text);
 
 CREATE TYPE semver AS (
 	major int,
@@ -73,7 +84,56 @@ BEGIN
 	RETURN ROW(major, minor, patch, prerelease, identifiers, build);
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION semver_eq(semver1 semver, semver2 semver)
+RETURNS boolean
+AS $$
+BEGIN
+	RETURN (
+		COALESCE(semver1.major, 0) = COALESCE(semver2.major, 0) and
+		COALESCE(semver1.minor, 0) = COALESCE(semver2.minor, 0) and
+		COALESCE(semver1.patch, 0) = COALESCE(semver2.patch, 0) and
+		semver1.identifiers = semver2.identifiers and
+		COALESCE(semver1.build, '') = COALESCE(semver2.build, '')
+	);
+END;
+$$
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OPERATOR = (
+	FUNCTION = semver_eq,
+	LEFTARG = semver,
+	RIGHTARG = semver,
+	COMMUTATOR = =,
+	NEGATOR = <>
+);
+
+CREATE OR REPLACE FUNCTION semver_ne(semver1 semver, semver2 semver)
+RETURNS boolean
+AS $$
+BEGIN
+	RETURN (
+		COALESCE(semver1.major, 0) <> COALESCE(semver2.major, 0) or
+		COALESCE(semver1.minor, 0) <> COALESCE(semver2.minor, 0) or
+		COALESCE(semver1.patch, 0) <> COALESCE(semver2.patch, 0) or
+		semver1.identifiers <> semver2.identifiers or
+		COALESCE(semver1.build, '') <> COALESCE(semver2.build, '')
+	);
+END;
+$$
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OPERATOR <> (
+	FUNCTION = semver_ne,
+	LEFTARG = semver,
+	RIGHTARG = semver,
+	COMMUTATOR = <>,
+	NEGATOR = =
+);
 
 CREATE OR REPLACE FUNCTION semver_lt(semver1 semver, semver2 semver)
 RETURNS boolean
@@ -138,7 +198,8 @@ BEGIN
 	RETURN FALSE;
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR < (
 	FUNCTION = semver_lt,
@@ -151,12 +212,12 @@ CREATE OPERATOR < (
 CREATE OR REPLACE FUNCTION semver_le(semver1 semver, semver2 semver)
 RETURNS boolean
 AS $$
-DECLARE
 BEGIN
 	RETURN semver1 = semver2 OR semver1 < semver2;
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR <= (
 	FUNCTION = semver_le,
@@ -229,7 +290,8 @@ BEGIN
 	RETURN FALSE;
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR > (
 	FUNCTION = semver_gt,
@@ -247,7 +309,8 @@ BEGIN
 	RETURN semver1 = semver2 OR semver1 > semver2;
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR >= (
 	FUNCTION = semver_ge,
@@ -256,3 +319,68 @@ CREATE OPERATOR >= (
 	COMMUTATOR = <=,
 	NEGATOR = <
 );
+
+CREATE OR REPLACE FUNCTION semver_cmp(semver1 semver, semver2 semver)
+RETURNS int
+AS $$
+BEGIN
+	IF semver1 = semver2 THEN
+		RETURN 0;
+	ELSIF semver1 < semver2 THEN
+		RETURN -1;
+	ELSE
+		RETURN 1;
+	END IF;
+END;
+$$
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OPERATOR CLASS btree_semver_ops
+DEFAULT FOR TYPE semver USING btree
+AS
+	OPERATOR    1    <  ,
+	OPERATOR    2    <= ,
+	OPERATOR    3    =  ,
+	OPERATOR    4    >= ,
+	OPERATOR    5    >  ,
+	FUNCTION    1    semver_cmp(semver, semver);
+
+CREATE OR REPLACE FUNCTION semver_to_text(semver1 semver)
+RETURNS text
+AS $$
+DECLARE
+	version text;
+BEGIN
+	version := FORMAT('%s.%s.%s', semver1.major, semver1.minor, semver1.patch);
+	IF version IS NULL THEN
+		RETURN NULL;
+	END IF;
+
+	IF semver1.prerelease IS NOT NULL THEN
+		version := FORMAT('%s-%s', version, semver1.prerelease);
+	END IF;
+	IF semver1.build IS NOT NULL THEN
+		version := FORMAT('%s+%s', version, semver1.build);
+	END IF;
+
+	RETURN version;
+END;
+$$
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION hash_semver(semver1 semver)
+RETURNS int
+AS $$
+BEGIN
+	RETURN hashtext(semver_to_text(semver1));
+END;
+$$
+LANGUAGE plpgsql
+IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OPERATOR CLASS hash_semver_ops
+	DEFAULT FOR TYPE semver USING hash AS
+		OPERATOR    1    = ,
+		FUNCTION    1    hash_semver(semver);
