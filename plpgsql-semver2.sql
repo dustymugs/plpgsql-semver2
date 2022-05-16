@@ -108,7 +108,9 @@ CREATE OPERATOR = (
 	LEFTARG = semver,
 	RIGHTARG = semver,
 	COMMUTATOR = =,
-	NEGATOR = <>
+	NEGATOR = <>,
+ 	RESTRICT = eqsel,
+ 	JOIN = eqjoinsel
 );
 
 CREATE OR REPLACE FUNCTION semver_ne(semver1 semver, semver2 semver)
@@ -132,7 +134,9 @@ CREATE OPERATOR <> (
 	LEFTARG = semver,
 	RIGHTARG = semver,
 	COMMUTATOR = <>,
-	NEGATOR = =
+	NEGATOR = =,
+ 	RESTRICT = neqsel,
+ 	JOIN = neqjoinsel
 );
 
 CREATE OR REPLACE FUNCTION semver_lt(semver1 semver, semver2 semver)
@@ -206,7 +210,9 @@ CREATE OPERATOR < (
 	LEFTARG = semver,
 	RIGHTARG = semver,
 	COMMUTATOR = >,
-	NEGATOR = >=
+	NEGATOR = >=,
+ 	RESTRICT = scalarltsel,
+ 	JOIN = scalarltjoinsel
 );
 
 CREATE OR REPLACE FUNCTION semver_le(semver1 semver, semver2 semver)
@@ -224,7 +230,9 @@ CREATE OPERATOR <= (
 	LEFTARG = semver,
 	RIGHTARG = semver,
 	COMMUTATOR = >=,
-	NEGATOR = >
+	NEGATOR = >,
+ 	RESTRICT = scalarlesel,
+ 	JOIN = scalarlejoinsel
 );
 
 CREATE OR REPLACE FUNCTION semver_gt(semver1 semver, semver2 semver)
@@ -298,7 +306,9 @@ CREATE OPERATOR > (
 	LEFTARG = semver,
 	RIGHTARG = semver,
 	COMMUTATOR = <,
-	NEGATOR = <=
+	NEGATOR = <=,
+ 	RESTRICT = scalargtsel,
+ 	JOIN = scalargtjoinsel
 );
 
 CREATE OR REPLACE FUNCTION semver_ge(semver1 semver, semver2 semver)
@@ -317,7 +327,9 @@ CREATE OPERATOR >= (
 	LEFTARG = semver,
 	RIGHTARG = semver,
 	COMMUTATOR = <=,
-	NEGATOR = <
+	NEGATOR = <,
+ 	RESTRICT = scalargesel,
+ 	JOIN = scalargejoinsel
 );
 
 CREATE OR REPLACE FUNCTION semver_cmp(semver1 semver, semver2 semver)
