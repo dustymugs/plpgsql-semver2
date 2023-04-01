@@ -94,8 +94,7 @@ BEGIN
 		COALESCE(semver1.major, 0) = COALESCE(semver2.major, 0) and
 		COALESCE(semver1.minor, 0) = COALESCE(semver2.minor, 0) and
 		COALESCE(semver1.patch, 0) = COALESCE(semver2.patch, 0) and
-		semver1.identifiers = semver2.identifiers and
-		COALESCE(semver1.build, '') = COALESCE(semver2.build, '')
+		semver1.identifiers = semver2.identifiers
 	);
 END;
 $$
@@ -120,8 +119,7 @@ BEGIN
 		COALESCE(semver1.major, 0) <> COALESCE(semver2.major, 0) or
 		COALESCE(semver1.minor, 0) <> COALESCE(semver2.minor, 0) or
 		COALESCE(semver1.patch, 0) <> COALESCE(semver2.patch, 0) or
-		semver1.identifiers <> semver2.identifiers or
-		COALESCE(semver1.build, '') <> COALESCE(semver2.build, '')
+		semver1.identifiers <> semver2.identifiers
 	);
 END;
 $$
